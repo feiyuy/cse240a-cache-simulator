@@ -7,6 +7,7 @@
 //========================================================//
 
 #include "cache.h"
+#include <math.h>
 
 //
 // TODO:Student Information
@@ -112,8 +113,11 @@ icache_access(uint32_t addr)
   //
   uint32_t speed = 0;
 
-  uint32_t set_index = (addr >> log2(blocksize)) & (icacheSets-1);
-  uint32_t tag = addr >> log2(blocksize*icacheSets);
+  int byte_offset = log2(blocksize);
+  int tag_offset = log2(blocksize*icacheSets);
+
+  uint32_t set_index = (addr >> byte_offset) & (icacheSets-1);
+  uint32_t tag = addr >> tag_offset;
 
   int flag =  0;
 
@@ -164,8 +168,11 @@ dcache_access(uint32_t addr)
   //
   uint32_t speed = 0;
 
-  uint32_t set_index = (addr >> log2(blocksize)) & (dcacheSets-1);
-  uint32_t tag = addr >> log2(blocksize*dcacheSets);
+  int byte_offset = log2(blocksize);
+  int tag_offset = log2(blocksize*dcacheSets);
+
+  uint32_t set_index = (addr >> byte_offset) & (dcacheSets-1);
+  uint32_t tag = addr >> tag_offset;
 
   int flag =  0;
 
@@ -216,8 +223,11 @@ l2cache_access(uint32_t addr)
   //
   uint32_t speed = 0;
 
-  uint32_t set_index = (addr >> log2(blocksize)) & (l2cacheSets-1);
-  uint32_t tag = addr >> log2(blocksize*l2cacheSets);
+  int byte_offset = log2(blocksize);
+  int tag_offset = log2(blocksize*l2cacheSets);
+
+  uint32_t set_index = (addr >> byte_offset) & (l2cacheSets-1);
+  uint32_t tag = addr >> tag_offset;
 
   int flag =  0;
 
