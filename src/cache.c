@@ -120,10 +120,10 @@ icache_access(uint32_t addr)
   //
   //TODO: Implement I$
   //
-  icacheRefs++;
   uint32_t speed = 0;
 
   if (icacheSets != 0){
+    icacheRefs++;
     int byte_offset = log2(blocksize);
     int tag_offset = log2(blocksize*icacheSets);
 
@@ -185,10 +185,10 @@ dcache_access(uint32_t addr)
   //
   //TODO: Implement D$
   //
-  dcacheRefs++;
   uint32_t speed = 0;
 
   if (dcacheSets){
+    dcacheRefs++;
     int byte_offset = log2(blocksize);
     int tag_offset = log2(blocksize*dcacheSets);
 
@@ -250,10 +250,10 @@ l2cache_access(uint32_t addr)
   //
   //TODO: Implement L2$
   //
-  l2cacheRefs++;
   uint32_t speed = 0;
 
   if (l2cacheSets != 0){
+    l2cacheRefs++;
     int byte_offset = log2(blocksize);
     int tag_offset = log2(blocksize*l2cacheSets);
 
