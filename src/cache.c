@@ -155,10 +155,9 @@ icache_access(uint32_t addr)
     //printf("iflag: %d\n", flag);
 
     if (flag == 0){
-      speed = icacheHitTime + l2cache_access(addr);
       icacheMisses++;
-      icachePenalties += speed;
-      //icachePenalties += l2cache_access(addr);
+      icachePenalties += l2cache_access(addr);
+      speed = icacheHitTime + icachePenalties;
       
       uint32_t currentLRU = icacheLRU[set_index][0];
       icache[set_index][currentLRU] = tag;
@@ -221,10 +220,9 @@ dcache_access(uint32_t addr)
     //printf("dflag: %d\n", flag);
 
     if (flag == 0){
-      speed = dcacheHitTime + l2cache_access(addr);
       dcacheMisses++;
-      dcachePenalties += speed;
-      //dcachePenalties += l2cache_access(addr);
+      dcachePenalties += l2cache_access(addr);
+      speed = dcacheHitTime + dcachePenalties;
       
       uint32_t currentLRU = dcacheLRU[set_index][0];
       dcache[set_index][currentLRU] = tag;
