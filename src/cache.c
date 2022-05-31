@@ -123,49 +123,54 @@ icache_access(uint32_t addr)
   icacheRefs++;
   uint32_t speed = 0;
 
-  int byte_offset = log2(blocksize);
-  int tag_offset = log2(blocksize*icacheSets);
+  if (icacheSets != 0){
+    int byte_offset = log2(blocksize);
+    int tag_offset = log2(blocksize*icacheSets);
 
-  uint32_t set_index = (addr >> byte_offset) & (icacheSets-1);
-  uint32_t tag = addr >> tag_offset;
+    uint32_t set_index = (addr >> byte_offset) & (icacheSets-1);
+    uint32_t tag = addr >> tag_offset;
 
-  int flag =  0;
+    int flag =  0;
 
-  for (int i=0; i<icacheAssoc; i++){
-    if (icache[set_index][i] == tag && icacheValid[set_index][i] == 1){
-      speed = icacheHitTime;
-      flag = 1;
+    for (int i=0; i<icacheAssoc; i++){
+      if (icache[set_index][i] == tag && icacheValid[set_index][i] == 1){
+        speed = icacheHitTime;
+        flag = 1;
 
-      for (int j=0; j<icacheAssoc; j++){
-        if (icacheLRU[set_index][j] == i){
-          for (int k=j; k<icacheAssoc-1; k++){
-            icacheLRU[set_index][k] = icacheLRU[set_index][k+1];
+        for (int j=0; j<icacheAssoc; j++){
+          if (icacheLRU[set_index][j] == i){
+            for (int k=j; k<icacheAssoc-1; k++){
+              icacheLRU[set_index][k] = icacheLRU[set_index][k+1];
+            }
+            icacheLRU[set_index][icacheAssoc-1] = i;
+            break;
           }
-          icacheLRU[set_index][icacheAssoc-1] = i;
-          break;
         }
-      }
 
-      break;
+        break;
+      }
+    }
+
+    //printf("itag: %d\n", tag);
+    //printf("iflag: %d\n", flag);
+
+    if (flag == 0){
+      speed = icacheHitTime + l2cache_access(addr);
+      icacheMisses++;
+      icachePenalties += speed;
+      
+      uint32_t currentLRU = icacheLRU[set_index][0];
+      icache[set_index][currentLRU] = tag;
+      icacheValid[set_index][currentLRU] = 1;
+
+      for (int k=0; k<icacheAssoc-1; k++){
+        icacheLRU[set_index][k] = icacheLRU[set_index][k+1];
+      }
+      icacheLRU[set_index][icacheAssoc-1] = currentLRU;
     }
   }
-
-  //printf("itag: %d\n", tag);
-  //printf("iflag: %d\n", flag);
-
-  if (flag == 0){
-    speed = icacheHitTime + l2cache_access(addr);
-    icacheMisses++;
-    icachePenalties += speed;
-    
-    uint32_t currentLRU = icacheLRU[set_index][0];
-    icache[set_index][currentLRU] = tag;
-    icacheValid[set_index][currentLRU] = 1;
-
-    for (int k=0; k<icacheAssoc-1; k++){
-      icacheLRU[set_index][k] = icacheLRU[set_index][k+1];
-    }
-    icacheLRU[set_index][icacheAssoc-1] = currentLRU;
+  else{
+    speed = l2cache_access(addr);
   }
 
   return speed;
@@ -183,49 +188,54 @@ dcache_access(uint32_t addr)
   dcacheRefs++;
   uint32_t speed = 0;
 
-  int byte_offset = log2(blocksize);
-  int tag_offset = log2(blocksize*dcacheSets);
+  if (dcacheSets){
+    int byte_offset = log2(blocksize);
+    int tag_offset = log2(blocksize*dcacheSets);
 
-  uint32_t set_index = (addr >> byte_offset) & (dcacheSets-1);
-  uint32_t tag = addr >> tag_offset;
+    uint32_t set_index = (addr >> byte_offset) & (dcacheSets-1);
+    uint32_t tag = addr >> tag_offset;
 
-  int flag =  0;
+    int flag =  0;
 
-  for (int i=0; i<dcacheAssoc; i++){
-    if (dcache[set_index][i] == tag && dcacheValid[set_index][i] == 1){
-      speed = dcacheHitTime;
-      flag = 1;
+    for (int i=0; i<dcacheAssoc; i++){
+      if (dcache[set_index][i] == tag && dcacheValid[set_index][i] == 1){
+        speed = dcacheHitTime;
+        flag = 1;
 
-      for (int j=0; j<dcacheAssoc; j++){
-        if (dcacheLRU[set_index][j] == i){
-          for (int k=j; k<dcacheAssoc-1; k++){
-            dcacheLRU[set_index][k] = dcacheLRU[set_index][k+1];
+        for (int j=0; j<dcacheAssoc; j++){
+          if (dcacheLRU[set_index][j] == i){
+            for (int k=j; k<dcacheAssoc-1; k++){
+              dcacheLRU[set_index][k] = dcacheLRU[set_index][k+1];
+            }
+            dcacheLRU[set_index][dcacheAssoc-1] = i;
+            break;
           }
-          dcacheLRU[set_index][dcacheAssoc-1] = i;
-          break;
         }
-      }
 
-      break;
+        break;
+      }
+    }
+
+    //printf("dtag: %d\n", tag);
+    //printf("dflag: %d\n", flag);
+
+    if (flag == 0){
+      speed = dcacheHitTime + l2cache_access(addr);
+      dcacheMisses++;
+      dcachePenalties += speed;
+      
+      uint32_t currentLRU = dcacheLRU[set_index][0];
+      dcache[set_index][currentLRU] = tag;
+      dcacheValid[set_index][currentLRU] = 1;
+
+      for (int k=0; k<dcacheAssoc-1; k++){
+        dcacheLRU[set_index][k] = dcacheLRU[set_index][k+1];
+      }
+      dcacheLRU[set_index][dcacheAssoc-1] = currentLRU;
     }
   }
-
-  //printf("dtag: %d\n", tag);
-  //printf("dflag: %d\n", flag);
-
-  if (flag == 0){
-    speed = dcacheHitTime + l2cache_access(addr);
-    dcacheMisses++;
-    dcachePenalties += speed;
-    
-    uint32_t currentLRU = dcacheLRU[set_index][0];
-    dcache[set_index][currentLRU] = tag;
-    dcacheValid[set_index][currentLRU] = 1;
-
-    for (int k=0; k<dcacheAssoc-1; k++){
-      dcacheLRU[set_index][k] = dcacheLRU[set_index][k+1];
-    }
-    dcacheLRU[set_index][dcacheAssoc-1] = currentLRU;
+  else{
+    speed = l2cache_access(addr);
   }
 
   return speed;
@@ -243,47 +253,51 @@ l2cache_access(uint32_t addr)
   l2cacheRefs++;
   uint32_t speed = 0;
 
-  int byte_offset = log2(blocksize);
-  int tag_offset = log2(blocksize*l2cacheSets);
+  if (l2cacheSets != 0){
+    int byte_offset = log2(blocksize);
+    int tag_offset = log2(blocksize*l2cacheSets);
 
-  uint32_t set_index = (addr >> byte_offset) & (l2cacheSets-1);
-  uint32_t tag = addr >> tag_offset;
+    uint32_t set_index = (addr >> byte_offset) & (l2cacheSets-1);
+    uint32_t tag = addr >> tag_offset;
 
-  int flag =  0;
+    int flag =  0;
 
-  for (int i=0; i<l2cacheAssoc; i++){
-    if (l2cache[set_index][i] == tag && l2cacheValid[set_index][i] == 1){
-      speed = l2cacheHitTime;
-      flag = 1;
+    for (int i=0; i<l2cacheAssoc; i++){
+      if (l2cache[set_index][i] == tag && l2cacheValid[set_index][i] == 1){
+        speed = l2cacheHitTime;
+        flag = 1;
 
-      for (int j=0; j<l2cacheAssoc; j++){
-        if (l2cacheLRU[set_index][j] == i){
-          for (int k=j; k<l2cacheAssoc-1; k++){
-            l2cacheLRU[set_index][k] = l2cacheLRU[set_index][k+1];
+        for (int j=0; j<l2cacheAssoc; j++){
+          if (l2cacheLRU[set_index][j] == i){
+            for (int k=j; k<l2cacheAssoc-1; k++){
+              l2cacheLRU[set_index][k] = l2cacheLRU[set_index][k+1];
+            }
+            l2cacheLRU[set_index][l2cacheAssoc-1] = i;
+            break;
           }
-          l2cacheLRU[set_index][l2cacheAssoc-1] = i;
-          break;
         }
+
+        break;
       }
+    }
 
-      break;
+    if (flag == 0){
+      speed = l2cacheHitTime + memspeed;
+      l2cacheMisses++;
+      l2cachePenalties += speed;
+      
+      uint32_t currentLRU = l2cacheLRU[set_index][0];
+      l2cache[set_index][currentLRU] = tag;
+      l2cacheValid[set_index][currentLRU] = 1;
+
+      for (int k=0; k<l2cacheAssoc-1; k++){
+        l2cacheLRU[set_index][k] = l2cacheLRU[set_index][k+1];
+      }
+      l2cacheLRU[set_index][l2cacheAssoc-1] = currentLRU;
     }
   }
-
-  if (flag == 0){
-    speed = l2cacheHitTime + memspeed;
-    l2cacheMisses++;
-    l2cachePenalties += speed;
-    
-    uint32_t currentLRU = l2cacheLRU[set_index][0];
-    l2cache[set_index][currentLRU] = tag;
-    l2cacheValid[set_index][currentLRU] = 1;
-
-    for (int k=0; k<l2cacheAssoc-1; k++){
-      l2cacheLRU[set_index][k] = l2cacheLRU[set_index][k+1];
-    }
-    l2cacheLRU[set_index][l2cacheAssoc-1] = currentLRU;
+  else{
+    speed = memspeed;
   }
-
   return speed;
 }
