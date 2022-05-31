@@ -8,6 +8,7 @@
 
 #include "cache.h"
 #include <math.h>
+#include <stdio.h>
 
 //
 // TODO:Student Information
@@ -66,6 +67,10 @@ uint32_t l2cache[MAX_SETS][MAX_ASSOS];
 uint32_t icacheLRU[MAX_SETS][MAX_ASSOS];
 uint32_t dcacheLRU[MAX_SETS][MAX_ASSOS];
 uint32_t l2cacheLRU[MAX_SETS][MAX_ASSOS];
+
+uint32_t icacheValid[MAX_SETS][MAX_ASSOS];
+uint32_t dcacheValid[MAX_SETS][MAX_ASSOS];
+uint32_t l2cacheValid[MAX_SETS][MAX_ASSOS];
 //------------------------------------//
 //          Cache Functions           //
 //------------------------------------//
@@ -98,6 +103,10 @@ init_cache()
       icacheLRU[i][j] = j;
       dcacheLRU[i][j] = j;
       l2cacheLRU[i][j] = j;
+
+      icacheValid[i][j] = 0;
+      dcacheValid[i][j] = 0;
+      l2cacheValid[i][j] = 0;
     }
   }
 }
@@ -123,7 +132,7 @@ icache_access(uint32_t addr)
   int flag =  0;
 
   for (int i=0; i<icacheAssoc; i++){
-    if (icache[set_index][i] == tag){
+    if (icache[set_index][i] == tag && icacheValid[set_index][i] == 1){
       speed = icacheHitTime;
       flag = 1;
 
@@ -141,13 +150,18 @@ icache_access(uint32_t addr)
     }
   }
 
+  //printf("itag: %d\n", tag);
+  //printf("iflag: %d\n", flag);
+
   if (flag == 0){
     speed = icacheHitTime + l2cache_access(addr);
     icacheMisses++;
     icachePenalties += speed;
     
     uint32_t currentLRU = icacheLRU[set_index][0];
-    icacheLRU[set_index][currentLRU] = tag;
+    icache[set_index][currentLRU] = tag;
+    icacheValid[set_index][currentLRU] = 1;
+
     for (int k=0; k<icacheAssoc-1; k++){
       icacheLRU[set_index][k] = icacheLRU[set_index][k+1];
     }
@@ -178,7 +192,7 @@ dcache_access(uint32_t addr)
   int flag =  0;
 
   for (int i=0; i<dcacheAssoc; i++){
-    if (dcache[set_index][i] == tag){
+    if (dcache[set_index][i] == tag && dcacheValid[set_index][i] == 1){
       speed = dcacheHitTime;
       flag = 1;
 
@@ -196,13 +210,18 @@ dcache_access(uint32_t addr)
     }
   }
 
+  //printf("dtag: %d\n", tag);
+  //printf("dflag: %d\n", flag);
+
   if (flag == 0){
     speed = dcacheHitTime + l2cache_access(addr);
     dcacheMisses++;
     dcachePenalties += speed;
     
     uint32_t currentLRU = dcacheLRU[set_index][0];
-    dcacheLRU[set_index][currentLRU] = tag;
+    dcache[set_index][currentLRU] = tag;
+    dcacheValid[set_index][currentLRU] = 1;
+
     for (int k=0; k<dcacheAssoc-1; k++){
       dcacheLRU[set_index][k] = dcacheLRU[set_index][k+1];
     }
@@ -233,7 +252,7 @@ l2cache_access(uint32_t addr)
   int flag =  0;
 
   for (int i=0; i<l2cacheAssoc; i++){
-    if (l2cache[set_index][i] == tag){
+    if (l2cache[set_index][i] == tag && l2cacheValid[set_index][i] == 1){
       speed = l2cacheHitTime;
       flag = 1;
 
@@ -257,7 +276,9 @@ l2cache_access(uint32_t addr)
     l2cachePenalties += speed;
     
     uint32_t currentLRU = l2cacheLRU[set_index][0];
-    l2cacheLRU[set_index][currentLRU] = tag;
+    l2cache[set_index][currentLRU] = tag;
+    l2cacheValid[set_index][currentLRU] = 1;
+
     for (int k=0; k<l2cacheAssoc-1; k++){
       l2cacheLRU[set_index][k] = l2cacheLRU[set_index][k+1];
     }
